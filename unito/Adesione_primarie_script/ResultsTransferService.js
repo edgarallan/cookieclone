@@ -183,7 +183,12 @@ var ResultsTransferService = (function() {
               newValue = mapData.tipoLab;
               break;
             case 'Proposta accettata':
-              newValue = "proposta da elaborare";
+              // FIX: Se non c'è una data (es. NESSUNA DISPONIBILITÀ), il campo deve essere vuoto.
+              if (!mapData.dataAssegnata) {
+                  newValue = "";
+              } else {
+                  newValue = "proposta da elaborare";
+              }
               break;
             case 'Nome laboratorio proposto/accettato':
               newValue = mapData.labAssegnato;
