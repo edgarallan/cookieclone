@@ -561,6 +561,35 @@ var MatchingEngine = (function() {
         }
     });
 
+    // === FIX MANCATA CANCELLAZIONE ===
+    // Controlliamo se ci sono richieste di "Repair" (chi aveva detto NO) 
+    // che NON sono state soddisfatte in nessuna fase.
+    // Dobbiamo forzare un aggiornamento vuoto per cancellare la data vecchia sul foglio.
+    
+    repairRequests.forEach(req => {
+        if (!assignedClasses.has(req.id)) {
+            // FIX: Calcolo dinamico della fase per il messaggio di non disponibilità
+            const currentCounter = requestAssignmentStats[req.id] ? requestAssignmentStats[req.id].rejectedCounter : 0;
+            const dynamicLabel = `NESSUNA DISPONIBILITÀ (Fase ${currentCounter})`;
+
+            // È una richiesta che doveva essere riparata ma non ha trovato posto.
+            // Aggiungiamo un oggetto che "pulisce" i campi.
+            assignments.push({
+                id: req.id,
+                labRichiesto: req.labRichiesto, // Manteniamo il lab richiesto originale
+                labAssegnato: "",     // VUOTO -> Cancella sul foglio
+                dataAssegnata: "",    // VUOTO -> Cancella sul foglio
+                punteggioEquita: 0,
+                faseAssegnazione: dynamicLabel,
+                assegnato: false,
+                durata_incontro: "",
+                sede: ""
+            });
+            // Non serve aggiungerlo ad assignedClasses perché non consuma risorse
+            Logger.log(`>>> [CLEANUP] RIMOZIONE VECCHIA DATA: ${req.id} -> ${dynamicLabel}`);
+        }
+    });
+
     return { assignments };
   }
 

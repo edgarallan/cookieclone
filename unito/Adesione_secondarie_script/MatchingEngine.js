@@ -568,6 +568,10 @@ var MatchingEngine = (function() {
     
     repairRequests.forEach(req => {
         if (!assignedClasses.has(req.id)) {
+            // FIX: Calcolo dinamico della fase per il messaggio di non disponibilità
+            const currentCounter = requestAssignmentStats[req.id] ? requestAssignmentStats[req.id].rejectedCounter : 0;
+            const dynamicLabel = `NESSUNA DISPONIBILITÀ (Fase ${currentCounter})`;
+
             // È una richiesta che doveva essere riparata ma non ha trovato posto.
             // Aggiungiamo un oggetto che "pulisce" i campi.
             assignments.push({
@@ -576,13 +580,13 @@ var MatchingEngine = (function() {
                 labAssegnato: "",     // VUOTO -> Cancella sul foglio
                 dataAssegnata: "",    // VUOTO -> Cancella sul foglio
                 punteggioEquita: 0,
-                faseAssegnazione: "NESSUNA DISPONIBILITÀ (Dopo Rifiuto)",
+                faseAssegnazione: dynamicLabel,
                 assegnato: false,
                 durata_incontro: "",
                 sede: ""
             });
             // Non serve aggiungerlo ad assignedClasses perché non consuma risorse
-            Logger.log(`>>> [CLEANUP] RIMOZIONE VECCHIA DATA: ${req.id} -> Nessun nuovo posto trovato.`);
+            Logger.log(`>>> [CLEANUP] RIMOZIONE VECCHIA DATA: ${req.id} -> ${dynamicLabel}`);
         }
     });
 
