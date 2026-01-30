@@ -127,8 +127,9 @@ var SheetSyncService = (function() {
     const acceptedColIdx = headers.indexOf('Proposta accettata');
     const labNameColIdx = headers.indexOf('Nome laboratorio proposto/accettato');
     const dateTimeColIdx = headers.indexOf('Data e ora proposta/accettata');
-    if ([idColIdx, acceptedColIdx, labNameColIdx, dateTimeColIdx].includes(-1)) {
-      throw new Error(`Mancano colonne necessarie in ${spreadsheet.getName()}: firebase_id, Proposta accettata, Nome laboratorio..., Data e ora...`);
+    const consiglioAiColIdx = headers.indexOf('consiglio AI');
+    if ([idColIdx, acceptedColIdx, labNameColIdx, dateTimeColIdx, consiglioAiColIdx].includes(-1)) {
+      throw new Error(`Mancano colonne necessarie in ${spreadsheet.getName()}: firebase_id, Proposta accettata, Nome laboratorio..., Data e ora..., consiglio AI`);
     }
 
     Logger.log('Lettura dati assegnazioni esistenti (Primarie e Secondarie)...');
@@ -202,14 +203,24 @@ var SheetSyncService = (function() {
           successCount++;
         }
 
-        // --- CASO 2: NO (Incremento rispetto al massimo) ---
+        // --- CASO 2: NO ---
         else if (acceptedStatus === 'NO') {
           const duplicationKey = `${firebaseId}_NO_${labName}_${labDateTime}`;
           if (existingNoOrToProcessRecords.has(duplicationKey)) {
             return;
           }
           
-          const newCount = currentMaxCount + 1;
+          const consiglioAi = String(row[consiglioAiColIdx] || '').trim().toUpperCase();
+          let newCount;
+          
+          // Se proviene da una fase standard, il primo rifiuto deve essere 1
+          const standardPhases = ['ALTA DOMANDA', 'BASSA DOMANDA', 'EXTRA (RIPIEGO)', 'EXTRA (TEMATICO)'];
+          if (standardPhases.includes(consiglioAi)) {
+              newCount = 1;
+          } else {
+              newCount = currentMaxCount + 1;
+          }
+
           maxCounterPerFirebaseId.set(firebaseId, newCount);
 
           const payload = {
