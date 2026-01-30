@@ -566,23 +566,28 @@ var MatchingEngine = (function() {
     // che NON sono state soddisfatte in nessuna fase.
     // Dobbiamo forzare un aggiornamento vuoto per cancellare la data vecchia sul foglio.
     
-    repairRequests.forEach(req => {
-        if (!assignedClasses.has(req.id)) {
-            // FIX: Calcolo dinamico della fase per il messaggio di non disponibilità
-            let currentCounter = requestAssignmentStats[req.id] ? requestAssignmentStats[req.id].rejectedCounter : 0;
+    // === FIX COMPLETO: CLEANUP SU TUTTE LE RICHIESTE (ANCHE QUELLE FILTRATE) ===
+    // Recuperiamo tutte le richieste originali per assicurarci di pulire anche quelle
+    // che sono state escluse dal matching (es. per limite rifiuti raggiunto).
+    const allReqs = Object.values(allData.requests);
+    
+    allReqs.forEach(req => {
+        // Criteri: Ha rifiuti pregressi AND non è stata assegnata ora
+        const stats = requestAssignmentStats[req.id];
+        if (stats && stats.rejectedCounter > 0 && !assignedClasses.has(req.id)) {
             
-            // Se siamo alla fase 3 (rifiuto della fase 2), etichettiamo comunque come "Fase 2" in caso di non disponibilità
+            let currentCounter = stats.rejectedCounter;
+            
+            // Se siamo alla fase 3 o superiore, etichettiamo come Fase 2 per coerenza visuale
             if (currentCounter >= 3) {
                 currentCounter = 2;
             }
             
             const dynamicLabel = `NESSUNA DISPONIBILITÀ (Fase ${currentCounter})`;
 
-            // È una richiesta che doveva essere riparata ma non ha trovato posto.
-            // Aggiungiamo un oggetto che "pulisce" i campi.
             assignments.push({
                 id: req.id,
-                labRichiesto: req.labRichiesto, // Manteniamo il lab richiesto originale
+                labRichiesto: req.labRichiesto,
                 labAssegnato: "",     // VUOTO -> Cancella sul foglio
                 dataAssegnata: "",    // VUOTO -> Cancella sul foglio
                 punteggioEquita: 0,
@@ -591,8 +596,7 @@ var MatchingEngine = (function() {
                 durata_incontro: "",
                 sede: ""
             });
-            // Non serve aggiungerlo ad assignedClasses perché non consuma risorse
-            Logger.log(`>>> [CLEANUP] RIMOZIONE VECCHIA DATA: ${req.id} -> ${dynamicLabel}`);
+            Logger.log(`>>> [CLEANUP EXTENDED] RIMOZIONE VECCHIA DATA: ${req.id} -> ${dynamicLabel}`);
         }
     });
 
