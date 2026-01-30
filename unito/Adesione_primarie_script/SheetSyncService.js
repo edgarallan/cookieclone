@@ -213,10 +213,15 @@ var SheetSyncService = (function() {
           const consiglioAi = String(row[consiglioAiColIdx] || '').trim().toUpperCase();
           let newCount;
           
-          // Se proviene da una fase standard, il primo rifiuto deve essere 1
+          // Logic aggiornata per gestione fasi esplicite
           const standardPhases = ['ALTA DOMANDA', 'BASSA DOMANDA', 'EXTRA (RIPIEGO)', 'EXTRA (TEMATICO)'];
+          
           if (standardPhases.includes(consiglioAi)) {
               newCount = 1;
+          } else if (consiglioAi.includes('FASE 1')) {
+              newCount = 2;
+          } else if (consiglioAi.includes('FASE 2')) {
+              newCount = 3;
           } else {
               newCount = currentMaxCount + 1;
           }
