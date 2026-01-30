@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <!-- Bootstrap CSS per uno stile rapido e pulito -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+      body { padding: 20px; background-color: #f8f9fa; }
+      #loading { font-size: 1.2rem; text-align: center; padding: 50px; }
+      .card { margin-bottom: 1.5rem; }
+      .card-header { font-weight: bold; }
+      .filters-container { background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+      .filter-group label { font-weight: 500; }
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <h1 class="mb-4">Catalogo Laboratori Didattici</h1>
+
+      <!-- Sezione Filtri -->
+      <div class="filters-container">
+        <div class="row g-3">
+          <div class="col-md-6 col-lg-4 filter-group">
+            <label for="filter-titolo" class="form-label">Cerca per Titolo</label>
+            <input type="text" class="form-control" id="filter-titolo" placeholder="Es. Il mondo dei vulcani">
+          </div>
+          <div class="col-md-6 col-lg-4 filter-group">
+            <label for="filter-area" class="form-label">Area Tematica</label>
+            <select class="form-select" id="filter-area"></select>
+          </div>
+          <div class="col-md-6 col-lg-4 filter-group">
+            <label for="filter-tipologia" class="form-label">Tipologia Attività</label>
+            <select class="form-select" id="filter-tipologia"></select>
+          </div>
+          <div class="col-md-6 col-lg-4 filter-group">
+            <label for="filter-destinatari" class="form-label">Destinatari</label>
+            <select class="form-select" id="filter-destinatari"></select>
+          </div>
+          <div class="col-md-6 col-lg-4 filter-group">
+            <label for="filter-disabilita" class="form-label">Accessibilità Disabilità</label>
+            <select class="form-select" id="filter-disabilita"></select>
+          </div>
+          <div class="col-md-6 col-lg-4 d-flex align-items-end">
+             <button id="reset-filters" class="btn btn-secondary w-100">Azzera Filtri</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicatore di caricamento -->
+      <div id="loading">Caricamento dati in corso...</div>
+
+      <!-- Container per i risultati -->
+      <div id="results-container" class="row">
+        <!-- I risultati verranno inseriti qui dal JavaScript -->
+      </div>
+      
+    </div>
+
+    <script>
+      let allData = []; // Variabile globale per contenere tutti i dati
+
+      // Funzione per caricare e popolare i filtri
+      function populateFilters(filters) {
+        const createOptions = (selectId, options) => {
+          const select = document.getElementById(selectId);
+          select.innerHTML = '<option value="">Tutte</option>'; // Opzione di default
+          options.forEach(opt => {
+            if(opt) select.innerHTML += `<option value="${opt}">${opt}</option>`;
+          });
+        };
+        
+        createOptions('filter-area', filters.area);
+        createOptions('filter-tipologia', filters.tipologia);
+        createOptions('filter-destinatari', filters.destinatari);
+        createOptions('filter-disabilita', filters.disabilita);
+      }
+
+      // Funzione per mostrare i risultati
+      function displayResults(data) {
+        const container = document.getElementById('results-container');
+        container.innerHTML = '';
+        if (data.length === 0) {
+          container.innerHTML = '<p class="text-center">Nessun laboratorio trovato con i criteri selezionati.</p>';
+          return;
+        }
+
+        data.forEach(lab => {
+          const cardHtml = `
+            <div class="col-md-6 col-lg-4">
+              <div class="card h-100">
+                <div class="card-header">${lab.titolo}</div>
+                <div class="card-body">
+                  <p><strong>Area:</strong> ${lab.area}</p>
+                  <p><strong>Tipologia:</strong> ${lab.tipologia}</p>
+                  <p><strong>Destinatari:</strong> ${lab.destinatari}</p>
+                  <p><strong>Classi Primaria:</strong> ${lab.primaria || 'N/D'}</p>
+                  <p><strong>Classi Secondaria:</strong> ${lab.secondaria || 'N/D'}</p>
+                  <p><strong>Sessioni:</strong> ${[lab.sessioneAut, lab.sessionePrim].filter(Boolean).join(', ')}</p>
+                </div>
+                <div class="card-footer text-center">
+                  ${lab.linkDoc ? `<a href="${lab.linkDoc}" target="_blank" class="btn btn-primary">Apri Scheda Dettagliata</a>` : '<span class="text-muted">Scheda non disponibile</span>'}
+                </div>
+              </div>
+            </div>
+          `;
+          container.innerHTML += cardHtml;
+        });
+      }
+
+      // Funzione che applica i filtri
+      function applyFilters() {
+        const titoloFilter = document.getElementById('filter-titolo').value.toLowerCase();
+        const areaFilter = document.getElementById('filter-area').value;
+        const tipologiaFilter = document.getElementById('filter-tipologia').value;
+        const destinatariFilter = document.getElementById('filter-destinatari').value;
+        const disabilitaFilter = document.getElementById('filter-disabilita').value;
+
+        const filteredData = allData.filter(lab => {
+          const checkString = (val, filter) => !filter || (val && val.toLowerCase().includes(filter.toLowerCase()));
+
+          return checkString(lab.titolo, titoloFilter) &&
+                 checkString(lab.area, areaFilter) &&
+                 checkString(lab.tipologia, tipologiaFilter) &&
+                 checkString(lab.destinatari, destinatariFilter) &&
+                 checkString(lab.disabilita, disabilitaFilter);
+        });
+        
+        displayResults(filteredData);
+      }
+
+      // Al caricamento della pagina, prendi i dati dal server
+      document.addEventListener("DOMContentLoaded", function() {
+        google.script.run
+          .withSuccessHandler(payload => {
+            if (payload.error) {
+              document.getElementById('loading').innerText = 'Errore nel caricamento dati: ' + payload.error;
+              return;
+            }
+            allData = payload.data;
+            populateFilters(payload.filters);
+            displayResults(allData);
+            document.getElementById('loading').style.display = 'none';
+
+            // Aggiungi gli event listener ai filtri
+            document.getElementById('filter-titolo').addEventListener('keyup', applyFilters);
+            document.querySelectorAll('.form-select').forEach(sel => sel.addEventListener('change', applyFilters));
+
+            // Aggiungi l'evento al pulsante di reset
+            document.getElementById('reset-filters').addEventListener('click', () => {
+              document.getElementById('filter-titolo').value = '';
+              document.querySelectorAll('.form-select').forEach(sel => sel.selectedIndex = 0);
+              displayResults(allData);
+            });
+          })
+          .withFailureHandler(err => {
+            document.getElementById('loading').innerText = 'Errore di comunicazione con il server: ' + err.message;
+          })
+          .getSheetData();
+      });
+    </script>
+  </body>
+</html>

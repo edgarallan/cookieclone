@@ -1,0 +1,8 @@
+{
+  "ui": {
+    "showCitations": false,
+    "footer": {
+      "hideContextPercentage": false
+    }
+  }
+}

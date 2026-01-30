@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "google-services-new-cli": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-google-services",
+        "--url",
+        "https://script.google.com/macros/s/AKfycbyyujZXKNyBTGb_74xRpsdjE8ZcBUl0SXlVNcF9ayjbVVU7oxJm3TGr1Sm_GK8ipmDzog/exec"
+      ]
+    }
+  }
+}
