@@ -569,7 +569,13 @@ var MatchingEngine = (function() {
     repairRequests.forEach(req => {
         if (!assignedClasses.has(req.id)) {
             // FIX: Calcolo dinamico della fase per il messaggio di non disponibilità
-            const currentCounter = requestAssignmentStats[req.id] ? requestAssignmentStats[req.id].rejectedCounter : 0;
+            let currentCounter = requestAssignmentStats[req.id] ? requestAssignmentStats[req.id].rejectedCounter : 0;
+            
+            // Se siamo alla fase 3 (rifiuto della fase 2), etichettiamo comunque come "Fase 2" in caso di non disponibilità
+            if (currentCounter >= 3) {
+                currentCounter = 2;
+            }
+            
             const dynamicLabel = `NESSUNA DISPONIBILITÀ (Fase ${currentCounter})`;
 
             // È una richiesta che doveva essere riparata ma non ha trovato posto.
