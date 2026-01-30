@@ -82,7 +82,7 @@ var MatchingEngine = (function() {
     const masterLaboratori = _buildMasterLaboratoriList(allData.laboratori, bookedSlots);
 
     // 4. Esecuzione algoritmo
-    const results = _performMatchingForType(config, filteredRequests, masterLaboratori, rejectedSlotsByRequest, requestAssignmentStats);
+    const results = _performMatchingForType(config, filteredRequests, masterLaboratori, rejectedSlotsByRequest, requestAssignmentStats, allData.requests);
     
     _saveResultsToFirebase(config.RESULTS_NODE, results.assignments);
     Logger.log(`=== FINE PROCESSO ${config.TYPE} ===\n`);
@@ -409,7 +409,7 @@ var MatchingEngine = (function() {
   // ========================================================
   // ASSEGNAZIONE (MAIN LOOP)
   // ========================================================
-  function _performMatchingForType(config, filteredRequests, masterLaboratori, rejectedSlotsByRequest, requestAssignmentStats) {
+  function _performMatchingForType(config, filteredRequests, masterLaboratori, rejectedSlotsByRequest, requestAssignmentStats, allRequests) {
     const deepCopiedMaster = JSON.parse(JSON.stringify(masterLaboratori));
     const { laboratori, requests } = _prepareDataForType(config, filteredRequests, deepCopiedMaster);
     
@@ -420,10 +420,10 @@ var MatchingEngine = (function() {
         Logger.log("⚠️ ATTENZIONE: Nessuna richiesta valida trovata.");
     }
 
-    return _processAssignments(laboratori, requests, config, rejectedSlotsByRequest, requestAssignmentStats);
+    return _processAssignments(laboratori, requests, config, rejectedSlotsByRequest, requestAssignmentStats, allRequests);
   }
 
-  function _processAssignments(laboratori, requests, config, rejectedSlotsByRequest, requestAssignmentStats) {
+  function _processAssignments(laboratori, requests, config, rejectedSlotsByRequest, requestAssignmentStats, allRequests) {
     const assignments = [];
     const assignedClasses = new Set();
     const equityCounters = _initEquityCounters();
@@ -569,7 +569,7 @@ var MatchingEngine = (function() {
     // === FIX COMPLETO: CLEANUP SU TUTTE LE RICHIESTE (ANCHE QUELLE FILTRATE) ===
     // Recuperiamo tutte le richieste originali per assicurarci di pulire anche quelle
     // che sono state escluse dal matching (es. per limite rifiuti raggiunto).
-    const allReqs = Object.values(allData.requests);
+    const allReqs = Object.values(allRequests);
     
     allReqs.forEach(req => {
         // Criteri: Ha rifiuti pregressi AND non è stata assegnata ora
